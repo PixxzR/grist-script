@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Importation vers Grist</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <h1>Importation de données vers Grist</h1>
+      <form id="upload-form">
+        <label for="file">Choisissez un fichier Excel :</label>
+        <input type="file" id="file" name="file" accept=".xlsx" />
+        <button type="submit">Importer</button>
+      </form>
+      <div id="status"></div>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>
