@@ -11,7 +11,7 @@
     }
   
     img {
-      max-width: 150px;
+      max-width: 300px;
       margin-bottom: 1rem;
     }
   

@@ -77,7 +77,8 @@ def upload_file():
         # Charger la configuration des colonnes
         config = load_admin_config()
         required_columns = config.get("required_columns", [])
-
+        duplicate_check_attribute = config.get("duplicate_check_attribute")
+        duplicate_method = config.get("duplicate_method")
         # Récupérer le fichier Excel
         file = request.files['file']
         data = read_and_validate_excel(file)
@@ -96,9 +97,12 @@ def upload_file():
         existing_records = fetch_existing_records(DOC_ID, TABLE_ID)
 
         # Filtrer les nouveaux enregistrements
-        unique_keys = ["Nom", "Ville"]
-        filtered_records = filter_new_records(existing_records, data.to_dict(orient="records"), unique_keys)
-
+        filtered_records = filter_new_records(
+            existing_records,
+            data.to_dict(orient="records"),
+            duplicate_check_attribute,
+            duplicate_method
+        )
         # Ajouter dans Grist
         if filtered_records:
             add_data_to_table(DOC_ID, TABLE_ID, filtered_records)
