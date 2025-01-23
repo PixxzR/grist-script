@@ -1,0 +1,9 @@
+{
+    "required_columns": [
+        "Nom",
+        "Age",
+        "Ville"
+    ],
+    "duplicate_check_attribute": "Nom",
+    "duplicate_method": "sum"
+}

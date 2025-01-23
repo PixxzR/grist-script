@@ -6,9 +6,9 @@ def create_fake_excel(file_path):
     """
     # Données fictives
     data = {
-        "Nom": ["Alice", "Bob2", "Charlie", "Diana", "Eve"],
+        "Nom": ["Alices", "Bob23", "Charlie", "Diana", "Eve"],
         "Age": [25, 30, 35, 40, 45],
-        "Ville": ["Pari", "Lyon", "Marseille", "Toulouse", "Bordeaux"]
+        "Ville": ["Paris", "Lyon", "Marseille", "Toulouse", "Bordeaux"]
     }
 
     # Convertir en DataFrame
