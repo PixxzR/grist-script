@@ -9,28 +9,36 @@ def filter_new_records(existing_records, new_records, duplicate_check_attribute,
     - duplicate_method (str): Méthode de gestion des doublons.
 
     Returns:
-    - List des enregistrements à ajouter (sans doublons).
+    - List des enregistrements à ajouter.
+    - List des enregistrements à mettre à jour.
     """
     if not duplicate_check_attribute:
-        # Si aucun attribut n'est défini, renvoie tous les enregistrements.
-        return new_records
+        # Si aucun attribut n'est défini, retourne tout en tant que nouveaux enregistrements
+        return new_records, []
 
-    # Construire un ensemble des valeurs existantes pour l'attribut spécifié
-    # Convertir en chaînes pour uniformiser les types
-    existing_keys = {str(record.get(duplicate_check_attribute)) for record in existing_records}
+    updates = []
+    additions = []
 
-    filtered_records = []
+    # Index des enregistrements existants par l'attribut de duplication
+    existing_map = {str(record[duplicate_check_attribute]): record for record in existing_records}
 
     for record in new_records:
-        # Convertir la clé de l'enregistrement en chaîne pour comparaison
         key = str(record.get(duplicate_check_attribute))
 
-        if key in existing_keys:
-            # La logique est la même pour toutes les méthodes : exclure les doublons.
-            if duplicate_method in ["overwrite", "sum", "replace"]:
-                continue  # Ne pas ajouter le doublon
-        else:
-            # Ajouter l'enregistrement s'il n'est pas un doublon
-            filtered_records.append(record)
+        if key in existing_map:
+            # Prépare un enregistrement pour la mise à jour
+            existing_record = existing_map[key]
+            update_fields = {}
 
-    return filtered_records
+            # Compare les champs pour identifier les différences
+            for field, value in record.items():
+                if value and (field not in existing_record or existing_record[field] != value):
+                    update_fields[field] = value
+
+            if update_fields:
+                updates.append({"id": existing_record["id"], "fields": update_fields})
+        else:
+            # Nouvel enregistrement à ajouter
+            additions.append(record)
+
+    return additions, updates

@@ -1,0 +1,18 @@
+{
+    "required_columns": [
+        "Nom",
+        "Age",
+        "Ville"
+    ],
+    "duplicate_check_attribute": "Nom",
+    "duplicate_method": "overwrite",
+    "doc_id": "dDr69dYrw5zk7U7TRebnro",
+    "table_id": "Table_Test_API",
+    "api_key": "1a5fb3dea181506cbac174e8f0c5dd446e6bf021",
+    "base_url": "https://docs.getgrist.com/api",
+    "base_url_options": [
+        "https://docs.getgrist.com/api",
+        "https://grist.numerique.gouv.fr/o/docs/",
+        "custom"
+    ]
+}

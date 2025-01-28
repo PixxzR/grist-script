@@ -1,6 +1,14 @@
-from config import BASE_URL, HEADERS
 import requests
+from admin_config import load_admin_config
+# Charger les configurations
+config = load_admin_config()
+BASE_URL = config.get("base_url", "")
+API_KEY = config.get("api_key", "")
 
+HEADERS = {
+    "Authorization": f"Bearer {API_KEY}",
+    "Content-Type": "application/json",
+}
 def create_document(workspace_id, doc_name):
     """
     Crée un nouveau document dans un espace de travail.
@@ -53,11 +61,95 @@ def fetch_existing_records(doc_id, table_id):
         response = requests.get(url, headers=HEADERS)
         response.raise_for_status()
         records = response.json().get("records", [])
-        # Transforme en un format plus facile à manipuler
+        # Inclut l'ID dans les données retournées
         existing_data = [
-            record["fields"] for record in records
+            {
+                "id": record["id"],  # Ajoute l'ID unique de Grist
+                **record["fields"],  # Inclut les champs de la ligne
+            }
+            for record in records
         ]
         return existing_data
     except requests.exceptions.RequestException as e:
         print(f"Erreur lors de la récupération des enregistrements existants : {e}")
-        return []
+        return []   
+     
+def update_records(doc_id, table_id, records):
+    """
+    Met à jour les enregistrements existants dans une table Grist.
+
+    Parameters:
+    - doc_id (str): ID du document.
+    - table_id (str): ID de la table.
+    - records (list): Liste des enregistrements à mettre à jour, avec leurs IDs.
+
+    Returns:
+    - dict: Réponse contenant les IDs des enregistrements mis à jour.
+    """
+    # Récupérer toutes les colonnes disponibles dans Grist
+    columns = list_columns(doc_id, table_id)
+    column_ids = [col['id'] for col in columns]
+    print(f"Noms des colonnes dans Grist : {column_ids}")  # Debug : Affiche les colonnes disponibles
+
+    # Construire les enregistrements pour le payload
+    payload_records = []
+    for record in records:
+        # Vérifier que chaque enregistrement a bien la structure attendue
+        if "id" in record and "fields" in record:
+            # S'assurer que toutes les colonnes sont présentes dans `fields`
+            for column in column_ids:
+                if column not in record["fields"]:
+                    record["fields"][column] = None  # Ajouter les colonnes manquantes avec `None`
+
+            payload_records.append(record)
+        else:
+            print(f"Enregistrement mal formé : {record}")  # Debug : Log des enregistrements incorrects
+
+    # Construire le payload final
+    url = f"{BASE_URL}/docs/{doc_id}/tables/{table_id}/records"
+    payload = {"records": payload_records}
+
+    # Debug : Afficher le payload avant l'envoi
+    print(f"Payload pour update : {payload}")
+
+    try:
+        response = requests.patch(url, headers=HEADERS, json=payload)
+        response.raise_for_status()
+        return response.json()
+    except requests.exceptions.RequestException as e:
+        print(f"Erreur lors de la mise à jour des enregistrements : {e}")
+        print(f"Erreur complète : {e.response.text}")  # Debug : Affiche les détails de l'erreur
+        return None
+    
+
+# Ajout d'une fonction pour compléter les données à partir de l'existant
+def build_update_payload(existing_records, updated_fields, columns):
+    """
+    Construit un payload pour mettre à jour les enregistrements en conservant les valeurs existantes.
+
+    Parameters:
+    - existing_records (list): Les enregistrements existants dans Grist.
+    - updated_fields (dict): Les champs mis à jour depuis l'Excel.
+    - columns (list): Les colonnes disponibles dans Grist.
+
+    Returns:
+    - dict: Payload formaté pour les mises à jour.
+    """
+    records_to_update = []
+
+    for record_id, updates in updated_fields.items():
+        # Récupérer les valeurs actuelles de l'enregistrement
+        existing_record = next((rec for rec in existing_records if rec["id"] == record_id), None)
+        if not existing_record:
+            continue  # Si l'enregistrement n'existe pas, on le saute
+
+        # Compléter les valeurs manquantes avec les données existantes
+        fields = {}
+        for col in columns:
+            col_id = col["id"]
+            fields[col_id] = updates.get(col_id, existing_record["fields"].get(col_id))
+
+        # Ajouter au payload
+        records_to_update.append({"id": record_id, "fields": fields})
+
+    return records_to_update

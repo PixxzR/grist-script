@@ -52,4 +52,4 @@
   
 	<!-- Contenu des pages géré par le routeur -->
 	<Router {routes} />
-  </div>
+  </div>"

@@ -1,5 +1,14 @@
-from config import BASE_URL, HEADERS
 import requests
+from admin_config import load_admin_config
+# Charger les configurations
+config = load_admin_config()
+BASE_URL = config.get("base_url", "")
+API_KEY = config.get("api_key", "")
+
+HEADERS = {
+    "Authorization": f"Bearer {API_KEY}",
+    "Content-Type": "application/json",
+}
 
 def list_and_display_columns(doc_id, table_id, include_hidden=False):
     """
