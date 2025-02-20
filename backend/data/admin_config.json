@@ -1,7 +1,6 @@
 {
   "required_columns": [
     "Date de r\u00e9ception r\u00e9c\u00e9piss\u00e9 demande RQTH",
-    "Date de validit\u00e9 donn\u00e9es MDPH",
     "DEPARTEMENT",
     "ORGANISME",
     "STRUCTURE MDPH",
@@ -51,9 +50,9 @@
   ],
   "duplicate_check_attribute": "NIR DEMANDEUR",
   "duplicate_method": "overwrite",
-  "doc_id": "fBxoKxAua1mkjgSwS9rf2s",
+  "doc_id": "u4qF7um48czP",
   "table_id": "DATA MDPH",
-  "api_key": "94c27b3823188db350427fcb78d41f3cb884fbab",
+  "api_key": "u4qF7um48czPmXtBppoDsC",
   "base_url": "https://docs.getgrist.com/api",
   "base_url_options": [
     "https://docs.getgrist.com/api",

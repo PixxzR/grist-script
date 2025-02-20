@@ -1,7 +1,7 @@
 <script>
     export let title = "France Travail Data Manager";
     export let description =
-      "Importez facilement vos fichiers Excel dans Grist et suivez le statut de vos données.";
+      "Importez facilement vos fichiers Excel dans Grist et suivez le statut de vos donnéesSJDFGSN.";
   </script>
   
   <style>

@@ -1,13 +1,12 @@
-from src.excel_reader import read_and_validate_excel
 from src.grist_api import add_data_to_table, fetch_existing_records,update_records,build_update_payload,list_columns
-from src.data_validation import filter_new_records
 from flask import Flask, request, jsonify, send_from_directory
 import time
 import os
 from flask_cors import CORS
 from admin_config import load_admin_config, save_admin_config
-import json
-
+from src.excel_handler import read_and_validate_excel
+from src.grist_handler import get_grist_data, push_to_grist
+from src.data_processor import process_records
 
 # Liste pour stocker l'historique des imports
 import_history = []
@@ -74,91 +73,43 @@ def admin_config():
         except Exception as e:
             return jsonify({"message": f"Erreur lors de la mise à jour : {str(e)}"}), 500
                 
+
+
 @app.route('/upload', methods=['POST'])
 def upload_file():
     """
     Endpoint pour téléverser un fichier Excel et importer les données dans Grist.
     """
     try:
-        # Charger la configuration des colonnes
+        # Charger la configuration
         config = load_admin_config()
         required_columns = config.get("required_columns", [])
-        duplicate_check_attribute = config.get("duplicate_check_attribute", "NIR")  # Par défaut, on prend NIR
+        duplicate_check_attribute = config.get("duplicate_check_attribute", "NIR")
         doc_id = config.get("doc_id")
         table_id = config.get("table_id")
 
-        # Étape 1 : Récupération et validation du fichier Excel
+        # Étape 1 : Lecture et validation du fichier Excel
         file = request.files['file']
-        data = read_and_validate_excel(file)  # Charge les données sous forme de DataFrame
-        print(f"Étape 1 : Données extraites de l'Excel\n{data}")  # Debug : Affiche les données extraites
+        data = read_and_validate_excel(file, required_columns)
+        print(f"Étape 1 : Données extraites de l'Excel\n{data}")
 
-        # Vérification des colonnes requises
-        columns_in_excel = data.columns.tolist()
-        print(f"Colonnes dans l'Excel : {columns_in_excel}")  # Debug : Affiche les colonnes disponibles dans l'Excel
-        missing_columns = [col for col in required_columns if col not in columns_in_excel]
-        if missing_columns:
-            return jsonify({
-                "status": "error",
-                "message": f"Colonnes manquantes : {', '.join(missing_columns)}"
-            }), 400
+        # Étape 2 : Récupération des données de Grist
+        existing_records, column_ids = get_grist_data(doc_id, table_id)
+        print(f"Étape 2 : Données existantes dans Grist\n{existing_records}")
+        print(f"Étape 3 : Colonnes disponibles dans Grist : {column_ids}")
 
-        # Étape 2 : Récupération des données existantes dans Grist
-        existing_records = fetch_existing_records(doc_id, table_id)
-        print(f"Étape 2 : Données existantes dans Grist\n{existing_records}")  # Debug : Affiche les données actuelles dans Grist
+        if "Date de transmission données MDPH" not in column_ids:
+            return jsonify({"status": "error", "message": "La colonne 'Date de transmission données MDPH' est manquante dans Grist."}), 400
 
-        # Étape 3 : Récupération des colonnes dans Grist
-        columns = list_columns(doc_id, table_id)
-        column_ids = [col['id'] for col in columns]
-        print(f"Étape 3 : Colonnes disponibles dans Grist : {column_ids}")  # Debug : Affiche les colonnes dans Grist
+        # Étape 4 : Préparer les données à ajouter ou mettre à jour
+        new_records = data.to_dict(orient="records")
+        additions, updates = process_records(new_records, existing_records, column_ids, duplicate_check_attribute)
 
-        # Étape 4 : Association entre Excel et Grist
-        new_records = data.to_dict(orient="records")  # Convertir les données Excel en liste de dictionnaires
-        print(f"Étape 4 : Données Excel au format dict\n{new_records}")  # Debug : Affiche les données Excel transformées
+        print(f"Étape 5 : Nouveaux enregistrements à ajouter\n{additions}")
+        print(f"Étape 5 : Enregistrements à mettre à jour\n{updates}")
 
-        # Étape 5 : Comparaison des données pour mise à jour ou ajout
-        additions = []
-        updates = []
-
-        for new_record in new_records:
-            # Trouver un doublon potentiel dans les données existantes
-            matching_record = next(
-                (record for record in existing_records if record.get(duplicate_check_attribute) == new_record.get(duplicate_check_attribute)),
-                None
-            )
-
-            if matching_record:
-                # Combiner les champs existants et les nouveaux champs
-                updated_fields = {}
-                for column in column_ids:
-                    existing_value = matching_record.get(column)
-                    new_value = new_record.get(column)
-
-                    # Si la colonne est vide dans Grist mais non vide dans Excel, on remplit
-                    if existing_value is None or existing_value == "":
-                        updated_fields[column] = new_value
-                    # Si la valeur est différente, on remplace par celle de l'Excel
-                    elif new_value != existing_value:
-                        updated_fields[column] = new_value
-                    # Si aucune modification, conserver la valeur actuelle
-                    else:
-                        updated_fields[column] = existing_value
-
-                if updated_fields:
-                    updates.append({"id": matching_record["id"], "fields": updated_fields})
-            else:
-                # Ajouter l'enregistrement si aucun doublon n'existe
-                additions.append(new_record)
-        print(f"Étape 5 : Nouveaux enregistrements à ajouter\n{additions}")  # Debug : Affiche les données à ajouter
-        print(f"Étape 5 : Enregistrements à mettre à jour\n{updates}")  # Debug : Affiche les données à mettre à jour
-
-        # Étape 6 : Envoi des ajouts et mises à jour à Grist
-        if additions:
-            add_data_to_table(doc_id, table_id, additions)
-            print(f"Étape 6 : Ajout des enregistrements réussi")  # Debug : Confirme les ajouts
-
-        if updates:
-            update_records(doc_id, table_id, updates)
-            print(f"Étape 6 : Mise à jour des enregistrements réussie")  # Debug : Confirme les mises à jour
+        # Étape 6 : Envoyer les données à Grist
+        push_to_grist(doc_id, table_id, additions, updates)
 
         # Journaliser l'import
         import_history.append({
@@ -172,14 +123,13 @@ def upload_file():
         return jsonify({"status": "success", "added": len(additions), "updated": len(updates)})
 
     except Exception as e:
-        print(f"Erreur : {e}")  # Debug : Affiche l'erreur complète
+        print(f"Erreur : {e}")
         import_history.append({
             "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
             "status": "error",
             "message": str(e)
         })
         return jsonify({"status": "error", "message": str(e)}), 500
-
 
 @app.route('/status', methods=['GET'])
 def get_status():

@@ -1,13 +1,12 @@
 import pandas as pd
 
-def read_and_validate_excel(file_path):
+def read_and_validate_excel(file):
     """
-    Lit un fichier Excel et retourne les données.
+    Lit le fichier Excel et retourne un DataFrame.
     """
-    try:
-        data = pd.read_excel(file_path)
-        print(f"Fichier Excel chargé : {len(data)} lignes trouvées.")
-        return data
-    except Exception as e:
-        print(f"Erreur lors de la lecture du fichier Excel : {e}")
-        raise
+    import pandas as pd
+
+    # Lire le fichier Excel
+    df = pd.read_excel(file, header=1)  # Utilise la 2ème ligne (index 1) comme en-tête
+    df = df.dropna(how="all")  # Supprime les lignes complètement vides
+    return df

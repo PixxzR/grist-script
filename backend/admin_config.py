@@ -1,7 +1,7 @@
 import json
 import os
 
-ADMIN_CONFIG_FILE = "data/admin_config_test.json"  # Fichier JSON pour stocker les exigences
+ADMIN_CONFIG_FILE = "data/admin_config.json"  # Fichier JSON pour stocker les exigences
 
 def load_admin_config():
     if os.path.exists(ADMIN_CONFIG_FILE):

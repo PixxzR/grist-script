@@ -1,3 +1,4 @@
+
 def filter_new_records(existing_records, new_records, duplicate_check_attribute, duplicate_method):
     """
     Filtre ou gère les doublons en fonction de la configuration.
@@ -42,3 +43,13 @@ def filter_new_records(existing_records, new_records, duplicate_check_attribute,
             additions.append(record)
 
     return additions, updates
+
+
+
+def validate_excel_columns(data, required_columns):
+    """Valide que toutes les colonnes requises sont présentes dans le fichier Excel."""
+    columns_in_excel = data.columns.tolist()
+    missing_columns = [col for col in required_columns if col not in columns_in_excel]
+    if missing_columns:
+        raise ValueError(f"Colonnes manquantes : {', '.join(missing_columns)}")
+    return columns_in_excel

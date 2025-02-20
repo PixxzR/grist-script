@@ -153,3 +153,38 @@ def build_update_payload(existing_records, updated_fields, columns):
         records_to_update.append({"id": record_id, "fields": fields})
 
     return records_to_update
+
+
+def get_additions_and_updates(new_records, existing_records, column_ids, duplicate_check_attribute, current_date):
+    """Compare les données pour déterminer les ajouts et les mises à jour."""
+    additions = []
+    updates = []
+
+    for new_record in new_records:
+        matching_record = next(
+            (record for record in existing_records if record.get(duplicate_check_attribute) == new_record.get(duplicate_check_attribute)),
+            None
+        )
+
+        if matching_record:
+            updated_fields = {}
+            for column in column_ids:
+                existing_value = matching_record.get(column)
+                new_value = new_record.get(column)
+
+                if existing_value is None or existing_value == "":
+                    updated_fields[column] = new_value
+                elif new_value != existing_value:
+                    updated_fields[column] = new_value
+
+            # Ajouter la date d'importation
+            updated_fields["Date_de_transmission_donnees_MDPH"] = current_date
+
+            if updated_fields:
+                updates.append({"id": matching_record["id"], "fields": updated_fields})
+        else:
+            # Ajouter la date pour les nouveaux enregistrements
+            new_record["Date_de_transmission_donnees_MDPH"] = current_date
+            additions.append(new_record)
+
+    return additions, updates
