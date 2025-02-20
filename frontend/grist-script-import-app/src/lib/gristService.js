@@ -7,8 +7,6 @@ export async function getGristToken() {
     if (!window.grist) {
       throw new Error("⚠️ L'API Grist n'est pas disponible.");
     }
-
-    // Déclarer que le widget est prêt
     grist.ready({ requiredAccess: "full" });
     console.log("✅ Widget prêt, demande d'accès envoyée...");
 

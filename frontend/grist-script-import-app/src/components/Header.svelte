@@ -1,18 +1,16 @@
 <script>
     export let title = "France Travail Data Manager";
     export let description =
-      "Importez facilement vos fichiers Excel dans Grist et suivez le statut de vos donnéesSJDFGSN.";
+      "Importez facilement vos fichiers Excel dans Grist et suivez le statut de vos données.";
   </script>
   
   <style>
     .header {
       text-align: center;
-      margin-bottom: 2rem;
     }
   
     img {
       max-width: 300px;
-      margin-bottom: 1rem;
     }
   
     h1 {
@@ -28,6 +26,6 @@
   
   <div class="header">
     <img src="/logo.png" alt="Logo France Travail" />
-    <h1>{title}</h1>
-    <p>{description}</p>
+    <!-- <h1>{title}</h1>
+    <p>{description}</p> -->
   </div>
