@@ -9,15 +9,6 @@ HEADERS = {
     "Authorization": f"Bearer {API_KEY}",
     "Content-Type": "application/json",
 }
-def create_document(workspace_id, doc_name):
-    """
-    Crée un nouveau document dans un espace de travail.
-    """
-    url = f"{BASE_URL}/workspaces/{workspace_id}/docs"
-    payload = {"name": doc_name}
-    response = requests.post(url, headers=HEADERS, json=payload)
-    response.raise_for_status()
-    return response.text.strip()  # Retourne l'ID du document
 
 def add_records(doc_id, table_id, records):
     """

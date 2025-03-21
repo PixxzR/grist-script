@@ -1,7 +1,8 @@
 <script>
   import { uploadFile } from "../lib/uploadService.js";
-  import { readAndValidateExcel } from "../lib/fileReader.js";
-  import { getProjectNameFromURL } from "../lib/urlService.js"; // 🔹 Import pour récupérer le nom du projet
+  import { readAndValidateExcel } from "../lib/excelReader.js";
+  import { getProjectNameFromURL } from "../lib/urlService.js";
+  import { getGristData } from "../lib/gristService.js"; // 🔹 Import de Grist
 
   let file = null;
   let status = "";
@@ -11,13 +12,30 @@
   // Récupérer le nom du projet depuis l'URL
   let projectName = getProjectNameFromURL();
 
+  // 🔹 Charger les données de Grist au chargement de la page
+  async function loadGristData() {
+    try {
+      console.log(`📌 Chargement des données Grist pour le projet : ${projectName}`);
+      
+      const { records, columnIds } = await getGristData("u4qF7um48czP", "DATA MDPH"); // Remplace avec tes valeurs
+      
+      console.log("✅ Données existantes dans Grist :", records);
+      console.log("📊 Colonnes disponibles dans Grist :", columnIds);
+    } catch (error) {
+      console.error("❌ Erreur lors du chargement des données Grist :", error.message);
+    }
+  }
+
+  // Charger les données Grist au lancement de la page
+  loadGristData();
+
   async function handleFileChange(event) {
     file = event.target.files[0];
 
     try {
       console.log(`📌 Chargement de la configuration pour : ${projectName}`);
 
-      // Passer le projectName à readAndValidateExcel
+      // 🔹 Passer le projectName à readAndValidateExcel
       const parsedData = await readAndValidateExcel(file, projectName);
       console.log("✅ Données Excel validées :", parsedData);
     } catch (error) {
@@ -39,8 +57,9 @@
     try {
       console.log(`📌 Import du fichier pour le projet : ${projectName}`);
 
-      // Lire et valider avec la bonne config
-      await readAndValidateExcel(file, projectName);
+      // 🔹 Lire et valider avec la bonne config
+      const parsedData = await readAndValidateExcel(file, projectName);
+      console.log("📂 Données Excel après validation :", parsedData);
 
       const result = await uploadFile(file);
       if (result.success) {
@@ -58,7 +77,6 @@
     }
   }
 </script>
-
 <style>
   .container {
     display: flex;

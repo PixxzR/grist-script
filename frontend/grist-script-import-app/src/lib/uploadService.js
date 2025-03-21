@@ -1,4 +1,3 @@
-// src/lib/gristApi.js
 export async function uploadFile() {
   try {
     return null;
